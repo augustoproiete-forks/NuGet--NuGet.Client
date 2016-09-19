@@ -1,138 +1,339 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
+using Microsoft.Build.Evaluation;
 using NuGet.Common;
+using NuGet.Test.Utility;
 using Xunit;
 
 namespace NuGet.CommandLine.Test
 {
     public class MSBuildUtilityTest
     {
-        // test that when msbuildVersion is null, SelectMsbuildToolset returns the highest installed version.
+        // Test that when msbuildVersion is null, GetMsBuildDirectoryInternal returns the highest installed version.
         [Fact]
-        public void HighestVersionSelectedIfMSBuildVersionIsNull()
+        public void HighestVersionSelectedIfMsBuildVersionIsNull()
         {
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetV4 = new MsbuildToolSet("4.0", "v4path");
+            System.Diagnostics.Debugger.Launch();
 
-            var installedToolsets = new List<MsbuildToolSet> {
-                    toolsetV14, toolsetV12, toolsetV4
-                };
+            // Arrange
+            var toolsetV14 = new MsBuildToolset(version: "14.0", path: "v14path");
+            var toolsetV12 = new MsBuildToolset(version: "12.0", path: "v12path");
+            var toolsetV4 = new MsBuildToolset(version: "4.0", path: "v4path");
 
-            var selectedToolset = MsBuildUtility.SelectMsbuildToolset(
-                msbuildVersion: null,
-                installedToolsets: installedToolsets);
+            var installedToolsets = new List<MsBuildToolset> {
+                toolsetV14, toolsetV12, toolsetV4
+            };
 
-            Assert.Equal(selectedToolset, toolsetV14);
+            // Act
+            var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
+                userVersion: null,
+                console: null,
+                installedToolsets: installedToolsets,
+                getMsBuildPathInPathVar: () => null);
+
+            // Assert
+            Assert.Equal(directory, toolsetV14.Path);
         }
 
-        // test that SelectMsbuildToolset returns the toolset that matches the msbuild version (major + minor)
+        // Test that when msbuildVersion is null, GetMsBuildDirectoryInternal returns the latest highest installed version.
         [Fact]
-        public void VersionSelectedThatMatchesMSBuildVersion()
+        public void LatestHighestVersionSelectedIfMsBuildVersionIsNull()
         {
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12_5 = new MsbuildToolSet("12.5", "v12_5path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetV4 = new MsbuildToolSet("4.0", "v4path");
+            // Arrange
+            var toolsetV151Early = new MsBuildToolset(version: "15.1", path: "v15_early_path", installDate: new DateTime(2016, 9, 15));
+            var toolsetV151Late = new MsBuildToolset(version: "15.1", path: "v15_late_path", installDate: new DateTime(2016, 9, 16));
+            var toolsetV14 = new MsBuildToolset(version: "14.0", path: "v14path");
+            var toolsetV12 = new MsBuildToolset(version: "12.0", path: "v12path");
+            var toolsetV4 = new MsBuildToolset(version: "4.0", path: "v4path");
 
-            var installedToolsets = new List<MsbuildToolSet> {
-                    toolsetV14, toolsetV12_5, toolsetV12, toolsetV4
-                };
+            // Test two orders in collection
+            var installedToolsetsAscendingDate = new List<MsBuildToolset> {
+                toolsetV151Early, toolsetV151Late, toolsetV14, toolsetV12, toolsetV4
+            };
+            var installedToolsetsDescendingDate = new List<MsBuildToolset> {
+                toolsetV151Late, toolsetV151Early, toolsetV14, toolsetV12, toolsetV4
+            };
 
-            var selectedToolset = MsBuildUtility.SelectMsbuildToolset(
-                msbuildVersion: new Version("12.5.4.12"),
-                installedToolsets: installedToolsets);
+            // Act
+            var directoryAscending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                userVersion: null,
+                console: null,
+                installedToolsets: installedToolsetsAscendingDate,
+                getMsBuildPathInPathVar: () => null);
 
-            Assert.Equal(selectedToolset, toolsetV12_5);
+            var directoryDescending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                userVersion: null,
+                console: null,
+                installedToolsets: installedToolsetsDescendingDate,
+                getMsBuildPathInPathVar: () => null);
 
+            // Assert
+            Assert.Equal(directoryAscending, toolsetV151Late.Path);
+            Assert.Equal(directoryDescending, toolsetV151Late.Path);
         }
 
-        // test that SelectMsbuildToolset returns the toolset that matches the msbuild major version if
-        // (major + minor) do not match
+        // Test that GetMsBuildDirectoryInternal returns the toolset that matches the msbuild version (major + minor)
         [Fact]
-        public void VersionSelectedThatMatchesMSBuildVersionMajor()
+        public void VersionSelectedThatMatchesMsBuildVersion()
         {
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetV4 = new MsbuildToolSet("4.0", "v4path");
+            // Arrange
+            var toolsetV14 = new MsBuildToolset(version: "14.0", path: "v14path");
+            var toolsetV12_5 = new MsBuildToolset(version: "12.5", path: "v12_5path");
+            var toolsetV12 = new MsBuildToolset(version: "12.0", path: "v12path");
+            var toolsetV4 = new MsBuildToolset(version: "4.0", path: "v4path");
 
-            var installedToolsets = new List<MsbuildToolSet> {
-                    toolsetV14, toolsetV12, toolsetV4
-                };
+            var installedToolsets = new List<MsBuildToolset> {
+                toolsetV14, toolsetV12_5, toolsetV12, toolsetV4
+            };
 
-            var selectedToolset = MsBuildUtility.SelectMsbuildToolset(
-                msbuildVersion: new Version("4.6"),
-                installedToolsets: installedToolsets);
+            // Act
+            var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
+                userVersion: null,
+                console: null,
+                installedToolsets: installedToolsets,
+                getMsBuildPathInPathVar: () => "v12_5path");
 
-            Assert.Equal(selectedToolset, toolsetV4);
+            // Assert
+            Assert.Equal(directory, toolsetV12_5.Path);
         }
 
-        // test that SelectMsbuildToolset returns the highest version toolset if
+        // Test that GetMsBuildDirectoryInternal returns the toolset that matches the msbuild version (major + minor)
+        [Fact]
+        public void LatestVersionSelectedThatMatchesMSBuildVersion()
+        {
+            // Arrange
+            var toolsetV151Early = new MsBuildToolset(version: "15.1", path: "v15_early_path", installDate: new DateTime(2016, 9, 15));
+            var toolsetV151Late = new MsBuildToolset(version: "15.1", path: "v15_late_path", installDate: new DateTime(2016, 9, 16));
+            var toolsetV14 = new MsBuildToolset(version: "14.0", path: "v14path");
+            var toolsetV12 = new MsBuildToolset(version: "12.0", path: "v12path");
+            var toolsetV4 = new MsBuildToolset(version: "4.0", path: "v4path");
+
+            // Test two orders in collection
+            var installedToolsetsAscendingDate = new List<MsBuildToolset> {
+                toolsetV151Early, toolsetV151Late, toolsetV14, toolsetV12, toolsetV4
+            };
+            var installedToolsetsDescendingDate = new List<MsBuildToolset> {
+                toolsetV151Late, toolsetV151Early, toolsetV14, toolsetV12, toolsetV4
+            };
+
+            // Act
+            var directoryAscending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                userVersion: null,
+                console: null,
+                installedToolsets: installedToolsetsAscendingDate,
+                getMsBuildPathInPathVar: () => "v15_late_path");
+
+            var directoryDescending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                userVersion: null,
+                console: null,
+                installedToolsets: installedToolsetsDescendingDate,
+                getMsBuildPathInPathVar: () => "v15_late_path");
+
+            // Assert
+            Assert.Equal(directoryAscending, toolsetV151Late.Path);
+            Assert.Equal(directoryDescending, toolsetV151Late.Path);
+        }
+
+        // Test that GetMsBuildDirectoryInternal returns the highest version toolset if
         // there are no matches using major nor (major + minor)
         [Fact]
         public void HighestVersionSelectedIfNoVersionMatch()
         {
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetV4 = new MsbuildToolSet("4.0", "v4path");
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV14 = new MsBuildToolset(version: "14.0", path: "v14path");
+                var toolsetV12 = new MsBuildToolset(version: "12.0", path: "v12path");
+                var toolsetV4 = new MsBuildToolset(version: "4.0", path: "v4path");
 
-            var installedToolsets = new List<MsbuildToolSet> {
+                var installedToolsets = new List<MsBuildToolset> {
                     toolsetV14, toolsetV12, toolsetV4
                 };
 
-            var selectedToolset = MsBuildUtility.SelectMsbuildToolset(
-                msbuildVersion: new System.Version("5.6"),
-                installedToolsets: installedToolsets);
+                // Act
+                var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: "14.1",
+                    console: null,
+                    installedToolsets: installedToolsets,
+                    getMsBuildPathInPathVar: () => null);
 
-            Assert.Equal(selectedToolset, toolsetV14);
+                // Assert
+                Assert.Equal(directory, toolsetV14.Path);
+            }
         }
 
+        // Test that GetMsBuildDirectoryInternal returns the latest highest version toolset if
+        // there are no matches using major nor (major + minor)
+        [Fact]
+        public void LatestHighestVersionSelectedIfNoVersionMatch()
+        {
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV151Early = new MsBuildToolset(version: "15.1", path: "v15_early_path", installDate: new DateTime(2016, 9, 15));
+                var toolsetV151Late = new MsBuildToolset(version: "15.1", path: "v15_late_path", installDate: new DateTime(2016, 9, 16));
+                var toolsetV14 = new MsBuildToolset(version: "14.0", path: "v14path");
+                var toolsetV12 = new MsBuildToolset(version: "12.0", path: "v12path");
+                var toolsetV4 = new MsBuildToolset(version: "4.0", path: "v4path");
+
+                // Test two orders in collection
+                var installedToolsetsAscendingDate = new List<MsBuildToolset> {
+                    toolsetV151Early, toolsetV151Late, toolsetV14, toolsetV12, toolsetV4
+                };
+                var installedToolsetsDescendingDate = new List<MsBuildToolset> {
+                    toolsetV151Late, toolsetV151Early, toolsetV14, toolsetV12, toolsetV4
+                };
+
+                // Act
+                var directoryAscending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: "12.1",
+                    console: null,
+                    installedToolsets: installedToolsetsAscendingDate,
+                    getMsBuildPathInPathVar: () => null);
+
+                var directoryDescending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: "12.1",
+                    console: null,
+                    installedToolsets: installedToolsetsDescendingDate,
+                    getMsBuildPathInPathVar: () => null);
+
+                // Assert
+                Assert.Equal(directoryAscending, toolsetV151Late.Path);
+                Assert.Equal(directoryDescending, toolsetV151Late.Path);
+            }
+        }
+/*
         // Tests that GetMsbuildDirectoryInternal() returns path of the toolset whose toolset version matches
         // the userVersion.
         [Fact]
         public void TestVersionMatch()
         {
-            // Arrange
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetV4 = new MsbuildToolSet("4.0", "v4path");
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV14 = new MsBuildToolsetEx(new Toolset(
+                    "14.0", "v14path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV12 = new MsBuildToolsetEx(new Toolset(
+                    "12.0", "v12path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV4 = new MsBuildToolsetEx(new Toolset(
+                    "4.0", "v4path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
 
-            var installedToolsets = new List<MsbuildToolSet> {
+                var installedToolsets = new List<MsBuildToolsetEx> {
                     toolsetV14, toolsetV12, toolsetV4
                 };
 
-            // Act
-            var directory = MsBuildUtility.GetMsbuildDirectoryInternal(
-                userVersion: "12.0",
-                console: null,
-                installedToolsets: installedToolsets);
+                // Act
+                var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: "12.0",
+                    console: null,
+                    installedToolsets: installedToolsets,
+                    getMSBuildPathInPath: () => null);
 
-            // Assert
-            Assert.Equal(directory, toolsetV12.ToolsPath);
+                // Assert
+                Assert.Equal(directory, toolsetV12.ToolsPath);
+            }
+        }
+
+        // Tests that GetMsbuildDirectoryInternal() returns path of the latest toolset whose toolset version matches
+        // the userVersion.
+        [Fact]
+        public void TestLatestVersionMatch()
+        {
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV151Early = new MsBuildToolsetEx(new Toolset(
+                    "15.1", "v15_early_path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null),
+                    new DateTime(2016, 9, 15));
+                var toolsetV151Late = new MsBuildToolsetEx(new Toolset(
+                    "15.1", "v15_late_path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null),
+                    new DateTime(2016, 9, 16));
+                var toolsetV14 = new MsBuildToolsetEx(new Toolset(
+                    "14.0", "v14path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV12 = new MsBuildToolsetEx(new Toolset(
+                    "12.0", "v12path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV4 = new MsBuildToolsetEx(new Toolset(
+                    "4.0", "v4path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+
+                // Test two orders in collection
+                var installedToolsetsAscendingDate = new List<MsBuildToolsetEx> {
+                    toolsetV151Early, toolsetV151Late, toolsetV14, toolsetV12, toolsetV4
+                };
+                var installedToolsetsDescendingDate = new List<MsBuildToolsetEx> {
+                    toolsetV151Late, toolsetV151Early, toolsetV14, toolsetV12, toolsetV4
+                };
+
+                // Act
+                var directoryAscending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: "15.1",
+                    console: null,
+                    installedToolsets: installedToolsetsAscendingDate,
+                    getMSBuildPathInPath: () => null);
+
+                var directoryDescending = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: "15.1",
+                    console: null,
+                    installedToolsets: installedToolsetsDescendingDate,
+                    getMSBuildPathInPath: () => null);
+
+                // Assert
+                Assert.Equal(directoryAscending, toolsetV151Late.ToolsPath);
+                Assert.Equal(directoryDescending, toolsetV151Late.ToolsPath);
+            }
         }
 
         // Tests that, when userVersion is just a number, it can be matched with version userVersion + ".0".
         [Fact]
         public void TestVersionMatchByNumber()
         {
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetV4 = new MsbuildToolSet("4.0", "v4path");
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV14 = new MsBuildToolsetEx(new Toolset(
+                    "14.0", "v14path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV12 = new MsBuildToolsetEx(new Toolset(
+                    "12.0", "v12path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV4 = new MsBuildToolsetEx(new Toolset(
+                    "4.0", "v4path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
 
-            var installedToolsets = new List<MsbuildToolSet> {
+                var installedToolsets = new List<MsBuildToolsetEx> {
                     toolsetV14, toolsetV12, toolsetV4
                 };
 
-            // Act
-            var directory = MsBuildUtility.GetMsbuildDirectoryInternal(
+                // Act
+                var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
                     userVersion: "12",
                     console: null,
-                    installedToolsets: installedToolsets);
+                    installedToolsets: installedToolsets,
+                    getMSBuildPathInPath: () => null);
 
-            // Assert
-            Assert.Equal(directory, toolsetV12.ToolsPath);
+                // Assert
+                Assert.Equal(directory, toolsetV12.ToolsPath);
+            }
         }
-
 
         [Theory]
 
@@ -144,23 +345,36 @@ namespace NuGet.CommandLine.Test
         [InlineData("foo4.0", "foo4path")]
         public void TestVersionMatchByString(string userVersion, string expectedDirectory)
         {
-            // Arrange
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetFoo4 = new MsbuildToolSet("Foo4.0", "foo4path");
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV14 = new MsBuildToolsetEx(new Toolset(
+                    "14.0", "v14path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV12 = new MsBuildToolsetEx(new Toolset(
+                    "12.0", "v12path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetFoo4 = new MsBuildToolsetEx(new Toolset(
+                    "Foo4.0", "foo4path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
 
-            var installedToolsets = new List<MsbuildToolSet> {
+                var installedToolsets = new List<MsBuildToolsetEx> {
                     toolsetV14, toolsetV12, toolsetFoo4
                 };
 
-            // Act
-            var directory = MsBuildUtility.GetMsbuildDirectoryInternal(
-                userVersion: userVersion,
-                console: null,
-                installedToolsets: installedToolsets);
+                // Act
+                var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
+                    userVersion: userVersion,
+                    console: null,
+                    installedToolsets: installedToolsets,
+                    getMSBuildPathInPath: () => null);
 
-            // Assert
-            Assert.Equal(directory, expectedDirectory);
+                // Assert
+                Assert.Equal(directory, expectedDirectory);
+            }
         }
 
         [Theory]
@@ -178,27 +392,41 @@ namespace NuGet.CommandLine.Test
         [InlineData("0")]
         public void TestVersionMatchByStringFailure(string userVersion)
         {
-            var toolsetV14 = new MsbuildToolSet("14.0", "v14path");
-            var toolsetV12 = new MsbuildToolSet("12.0", "v12path");
-            var toolsetFoo4 = new MsbuildToolSet("Foo4.0", "foo4path");
+            using (var projectCollection = new ProjectCollection())
+            {
+                // Arrange
+                var toolsetV14 = new MsBuildToolsetEx(new Toolset(
+                    "14.0", "v14path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetV12 = new MsBuildToolsetEx(new Toolset(
+                    "12.0", "v12path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
+                var toolsetFoo4 = new MsBuildToolsetEx(new Toolset(
+                    "Foo4.0", "foo4path",
+                    projectCollection: projectCollection,
+                    msbuildOverrideTasksPath: null));
 
-            var installedToolsets = new List<MsbuildToolSet> {
+                var installedToolsets = new List<MsBuildToolsetEx> {
                     toolsetV14, toolsetV12, toolsetFoo4
                 };
 
-            // Act
-            var ex = Assert.Throws<CommandLineException>(() =>
-                {
-                    var directory = MsBuildUtility.GetMsbuildDirectoryInternal(
-                        userVersion: userVersion,
-                        console: null,
-                        installedToolsets: installedToolsets);
-                });
+                // Act
+                var ex = Assert.Throws<CommandLineException>(() =>
+                    {
+                        var directory = MsBuildUtility.GetMsBuildDirectoryInternal(
+                            userVersion: userVersion,
+                            console: null,
+                            installedToolsets: installedToolsets,
+                            getMSBuildPathInPath: () => null);
+                    });
 
-            // Assert
-            Assert.Equal(
-                $"Cannot find the specified version of msbuild: '{userVersion}'",
-                ex.Message);
+                // Assert
+                Assert.Equal(
+                    $"Cannot find the specified version of msbuild: '{userVersion}'",
+                    ex.Message);
+            }
         }
 
         [Theory]
@@ -232,5 +460,46 @@ namespace NuGet.CommandLine.Test
                 }
             }
         }
+
+        [Fact]
+        public void TestMsBuildPathFromVsPath()
+        {
+            using (var vsPath = TestFileSystemUtility.CreateRandomTestFolder())
+            {
+                // Arrange
+                // Create this tree:
+                // VS
+                // |- MSBuild
+                //    |- 15.0
+                //    |  |- bin
+                //    |     |- msbuild.exe
+                //    |- 15.1
+                //       |- bin
+                //          |- msbuild.exe
+                // We want the highest version within the VS tree chosen (typically there's only one, but that's the logic 
+                // we'll go with in case there are more).
+                var msBuild15BinPath = Directory.CreateDirectory(Path.Combine(vsPath, "MSBuild", "15.0", "Bin")).FullName;
+                var msBuild151BinPath = Directory.CreateDirectory(Path.Combine(vsPath, "MSBuild", "15.1", "Bin")).FullName;
+
+                // Create dummy msbuild.exe files
+                var msBuild15ExePath = Path.Combine(msBuild15BinPath, "msbuild.exe").ToString();
+                using (var fs15 = File.CreateText(msBuild15ExePath))
+                {
+                    fs15.Write("foo 15");
+                }
+
+                var msBuild151ExePath = Path.Combine(msBuild151BinPath, "msbuild.exe").ToString();
+                using (var fs151 = File.CreateText(msBuild151ExePath))
+                {
+                    fs151.Write("foo 15.1");
+                }
+
+                // Act
+                var msBuildExePath = MsBuildToolsetEx.GetMSBuildPathFromVsPath(vsPath);
+
+                // Assert
+                Assert.Equal(msBuildExePath, msBuild151BinPath, ignoreCase: true);
+            }
+        }*/
     }
 }
