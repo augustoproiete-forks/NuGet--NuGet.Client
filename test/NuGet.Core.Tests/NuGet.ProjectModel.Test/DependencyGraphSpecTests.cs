@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
@@ -227,11 +231,11 @@ namespace NuGet.ProjectModel.Test
             msbuildMetadata.CrossTargeting = true;
             msbuildMetadata.LegacyPackagesDirectory = true;
 
-            JObject json = new JObject();
-
             // Act
-            JsonPackageSpecWriter.WritePackageSpec(spec, json);
-            var readSpec = JsonPackageSpecReader.GetPackageSpec(json.ToString(), "x", "c:\\fake\\project.json");
+            var writer = new JsonWriter();
+            PackageSpecWriter.Write(spec, writer);
+            var json = writer.GetJson();
+            var readSpec = JsonPackageSpecReader.GetPackageSpec(json, "x", "c:\\fake\\project.json");
             var msbuildMetadata2 = readSpec.RestoreMetadata;
 
             // Assert
@@ -298,11 +302,12 @@ namespace NuGet.ProjectModel.Test
             tfmGroup2.ProjectReferences.Add(ref1);
             tfmGroup2.ProjectReferences.Add(ref2);
 
-            JObject json = new JObject();
+            var writer = new JsonWriter();
 
             // Act
-            JsonPackageSpecWriter.WritePackageSpec(spec, json);
-            var readSpec = JsonPackageSpecReader.GetPackageSpec(json.ToString(), "x", "c:\\fake\\project.json");
+            PackageSpecWriter.Write(spec, writer);
+            var json = writer.GetJson();
+            var readSpec = JsonPackageSpecReader.GetPackageSpec(json, "x", "c:\\fake\\project.json");
 
             // Assert
             Assert.Equal(2, readSpec.RestoreMetadata.TargetFrameworks.Count);

@@ -26,6 +26,9 @@
     },
     "NuGet.Frameworks": {
       "target": "project"
+    },
+    "NuGet.Common": {
+      "target": "project"
     }
   },
   "frameworks": {
