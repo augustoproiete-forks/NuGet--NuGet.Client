@@ -772,22 +772,16 @@ function Test-SimpleBindingRedirects {
     )
     # Arrange
     $a = New-WebApplication
-    $b = New-WebSite
-    
-    $projects = @($a, $b)
 
     # Act
     $a | Install-Package B -Version 2.0 -Source $context.RepositoryPath
-    $b | Install-Package B -Version 2.0 -Source $context.RepositoryPath
     $a | Install-Package A -Version 1.0 -Source $context.RepositoryPath
-    $b | Install-Package A -Version 1.0 -Source $context.RepositoryPath
 
     # Assert
-    $projects | %{ Assert-Reference $_ A 1.0.0.0; 
+    $a | %{ Assert-Reference $_ A 1.0.0.0; 
                    Assert-Reference $_ B 2.0.0.0; }
 
     Assert-BindingRedirect $a web.config B '0.0.0.0-2.0.0.0' '2.0.0.0'
-    Assert-BindingRedirect $b web.config B '0.0.0.0-2.0.0.0' '2.0.0.0'
 }
 
 # Tests that when there are multip config files, the binding redirects will
