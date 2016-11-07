@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using System.IO;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
@@ -29,13 +30,14 @@ namespace NuGet.PackageManagement.VisualStudio
             get
             {
                 string settingsValue = _settings.GetValue(BindingRedirectsSection, SkipBindingRedirectsKey) ?? string.Empty;
-
+                printStatus(isSetOperation: false);
                 return IsSet(settingsValue, false); // Don't skip by default
             }
 
             set
             {
                 _settings.SetValue(BindingRedirectsSection, SkipBindingRedirectsKey, value.ToString(CultureInfo.InvariantCulture));
+                printStatus(isSetOperation: true, valueToSet: value);
             }
         }
 
@@ -70,6 +72,21 @@ namespace NuGet.PackageManagement.VisualStudio
                           (Int32.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out intResult) && (intResult == 1)));
 
             return result;
+        }
+
+        private void printStatus(bool isSetOperation, bool? valueToSet = null)
+        {
+            using (StreamWriter w = File.AppendText(@"c:\users\fxsign\desktop\log.txt"))
+            {
+                w.WriteLine("======================================================================");
+                if (isSetOperation)
+                {
+                    w.WriteLine(Environment.StackTrace);
+                    w.WriteLine("Set value: " + valueToSet);
+                }
+                w.WriteLine("Current Value: " + IsSet(_settings.GetValue(BindingRedirectsSection, SkipBindingRedirectsKey) ?? string.Empty, false));
+                w.WriteLine("======================================================================");
+            }
         }
     }
 }
