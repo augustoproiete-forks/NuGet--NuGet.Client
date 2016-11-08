@@ -573,8 +573,7 @@ namespace NuGet.Commands
                     updatedExternalProjects.Add(updatedReference);
 
                     // Determine if the targets and props files should be written out.
-                    context.IsMsBuildBased = _request.RestoreOutputType != RestoreOutputType.DotnetCliTool
-                        && XProjUtility.IsMSBuildBasedProject(rootProject.MSBuildProjectPath);
+                    context.IsMsBuildBased = _request.RestoreOutputType != RestoreOutputType.DotnetCliTool;
                 }
                 else
                 {
@@ -584,11 +583,9 @@ namespace NuGet.Commands
             }
 
             // Load repositories
-
             // the external project provider is specific to the current restore project
-            var projectResolver = new PackageSpecResolver(_request.Project);
             context.ProjectLibraryProviders.Add(
-                    new PackageSpecReferenceDependencyProvider(projectResolver, updatedExternalProjects, _logger));
+                    new PackageSpecReferenceDependencyProvider(updatedExternalProjects, _logger));
 
             var remoteWalker = new RemoteDependencyWalker(context);
 
