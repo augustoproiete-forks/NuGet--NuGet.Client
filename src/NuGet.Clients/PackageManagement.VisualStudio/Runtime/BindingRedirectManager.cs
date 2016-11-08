@@ -38,7 +38,6 @@ namespace NuGet.PackageManagement.VisualStudio
             ConfigurationFile = configurationFile;
             MSBuildNuGetProjectSystem = msBuildNuGetProjectSystem;
         }
-
         public void AddBindingRedirects(IEnumerable<AssemblyBinding> bindingRedirects)
         {
             if (bindingRedirects == null)
