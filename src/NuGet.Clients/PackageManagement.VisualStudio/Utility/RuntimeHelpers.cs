@@ -141,6 +141,18 @@ namespace NuGet.PackageManagement.VisualStudio
             // Create a binding redirect manager over the configuration
             var manager = new BindingRedirectManager(EnvDTEProjectUtility.GetConfigurationFile(envDTEProject), msBuildNuGetProjectSystem);
 
+            using (StreamWriter w = File.AppendText(@"c:\users\fxsign\desktop\log.txt"))
+            {
+                w.WriteLine("======================================================================");
+                w.WriteLine(Environment.StackTrace);
+                foreach (var redirect in redirects)
+                {
+                    w.WriteLine(redirect.ToString());
+                    w.WriteLine(redirect.Name + " " + redirect.OldVersion + " " + redirect.NewVersion);
+                }
+                w.WriteLine("======================================================================");
+            }
+
             // Add the redirects
             manager.AddBindingRedirects(redirects);
 
