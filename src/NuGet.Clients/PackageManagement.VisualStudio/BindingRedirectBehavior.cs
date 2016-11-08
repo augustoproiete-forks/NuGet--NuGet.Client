@@ -36,8 +36,8 @@ namespace NuGet.PackageManagement.VisualStudio
 
             set
             {
-                _settings.SetValue(BindingRedirectsSection, SkipBindingRedirectsKey, value.ToString(CultureInfo.InvariantCulture));
                 printStatus(isSetOperation: true, valueToSet: value);
+                _settings.SetValue(BindingRedirectsSection, SkipBindingRedirectsKey, value.ToString(CultureInfo.InvariantCulture));
             }
         }
 

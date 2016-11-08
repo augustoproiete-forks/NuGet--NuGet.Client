@@ -127,7 +127,7 @@ Invoke-BuildStep 'Building NuGet.Core projects' {
 
 ## Building the VS15 Tooling solution
 Invoke-BuildStep 'Building NuGet.Clients projects - VS15 Toolset' {
-        Build-ClientsProjects 'Debug' $ReleaseLabel $BuildNumber -ToolsetVersion 15
+        Build-ClientsProjects $Configuration $ReleaseLabel $BuildNumber -ToolsetVersion 15
     } `
     -skip:$SkipVS15 `
     -ev +BuildErrors
