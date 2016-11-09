@@ -102,7 +102,9 @@ namespace NuGet.PackageManagement.VisualStudio
             {
                 w.WriteLine("======================================================================");
                 w.WriteLine(DateTime.Now);
-                w.WriteLine("BindingRedirectBehavior setting set to : " + _settings.ToString());
+                w.WriteLine("BindingRedirectBehavior setting set to : ");
+                w.WriteLine(_settings.FileName);
+                w.WriteLine(_settings.Root);
                 w.WriteLine("Current Value: " + IsSet(_settings.GetValue(BindingRedirectsSection, SkipBindingRedirectsKey) ?? string.Empty, false));
                 w.WriteLine("----------------------------------------------------------");
                 w.WriteLine(Environment.StackTrace);
