@@ -215,9 +215,9 @@ namespace API.Test
             return new BindingRedirectBehavior(getVSSettings());
         }
 
-        private static VSSettings getVSSettings()
+        private static ISettings getVSSettings()
         {
-            return ServiceLocator.GetInstance<VSSettings>();
+            return ServiceLocator.GetInstance<NuGet.Configuration.ISettings>();
         }
     }
 }
