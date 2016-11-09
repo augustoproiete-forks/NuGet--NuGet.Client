@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using System.IO;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
@@ -22,6 +23,7 @@ namespace NuGet.PackageManagement.VisualStudio
             }
 
             _settings = settings;
+            printStatusOnConstruct();
         }
 
         public bool IsSkipped
@@ -70,6 +72,42 @@ namespace NuGet.PackageManagement.VisualStudio
                           (Int32.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out intResult) && (intResult == 1)));
 
             return result;
+        }
+
+        private void printStatus(bool isSetOperation, bool? valueToSet = null)
+        {
+            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "bindinglog.txt");
+            using (StreamWriter w = File.AppendText(logPath))
+            {
+                w.WriteLine("======================================================================");
+                w.WriteLine(DateTime.Now);
+                if (isSetOperation)
+                {
+                    w.WriteLine("Set value: " + valueToSet);
+                }
+                w.WriteLine("Current Value: " + IsSet(_settings.GetValue(BindingRedirectsSection, SkipBindingRedirectsKey) ?? string.Empty, false));
+                if (isSetOperation)
+                {
+                    w.WriteLine("----------------------------------------------------------");
+                    w.WriteLine(Environment.StackTrace);
+                }
+                w.WriteLine("======================================================================");
+            }
+        }
+
+        private void printStatusOnConstruct()
+        {
+            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "bindinglog.txt");
+            using (StreamWriter w = File.AppendText(logPath))
+            {
+                w.WriteLine("======================================================================");
+                w.WriteLine(DateTime.Now);
+                w.WriteLine("BindingRedirectBehavior setting set to : " + _settings.ToString());
+                w.WriteLine("Current Value: " + IsSet(_settings.GetValue(BindingRedirectsSection, SkipBindingRedirectsKey) ?? string.Empty, false));
+                w.WriteLine("----------------------------------------------------------");
+                w.WriteLine(Environment.StackTrace);
+                w.WriteLine("======================================================================");
+            }
         }
     }
 }

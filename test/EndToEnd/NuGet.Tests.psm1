@@ -304,7 +304,11 @@ function global:Run-Test {
                     }
                     popd
                 }
-
+				
+				$IsSkippedBefore = [API.Test.VSHelper]::IsBindingRedirectSkipped()			
+				
+				Write-Host "IsBindingRedirect before test : " $name " is " $IsSkippedBefore
+				
                 $context = New-Object PSObject -Property $values
 
                 # Some tests are flaky. We give failed tests another chance to succeed.
@@ -381,7 +385,15 @@ function global:Run-Test {
                         break;
                     }
                 }
-
+				
+				$IsSkippedAfter = [API.Test.VSHelper]::IsBindingRedirectSkipped()			
+				
+				Write-Host "IsBindingRedirect before test : " $name " is " $IsSkippedAfter
+				
+				if($IsSkippedAfter -ne $IsSkippedBefore) {
+					Write-Host "IsBindingRedirect changed in test : " $name
+				}
+				
                 Append-TextResult $results[$name] $testRealTimeResultsFile
             }
         }

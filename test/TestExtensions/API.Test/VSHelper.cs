@@ -22,6 +22,7 @@ namespace API.Test
         }
 
         private static Window PSWindow = null;
+
         public static void StorePSWindow()
         {
             ThreadHelper.JoinableTaskFactory.Run(async delegate
@@ -79,6 +80,7 @@ namespace API.Test
         }
 
         private static string BuildOutputPaneName = "Build";
+
         private static async Task<string> GetBuildOutputAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -112,6 +114,7 @@ namespace API.Test
         }
 
         private static string ErrorListWindowCaption = "Error List";
+
         private static async Task<string[]> GetErrorTasksAsync(vsBuildErrorLevel errorLevel)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -200,6 +203,21 @@ namespace API.Test
             var errorLevel = vsBuildErrorLevel.vsBuildErrorLevelMedium;
             var warnings = await GetErrorTasksAsync(errorLevel);
             return warnings;
+        }
+
+        public static bool IsBindingRedirectSkipped()
+        {
+            return getBindingRedirectBehavior().IsSkipped;
+        }
+
+        private static BindingRedirectBehavior getBindingRedirectBehavior()
+        {
+            return new BindingRedirectBehavior(getVSSettings());
+        }
+
+        private static VSSettings getVSSettings()
+        {
+            return ServiceLocator.GetInstance<VSSettings>();
         }
     }
 }
