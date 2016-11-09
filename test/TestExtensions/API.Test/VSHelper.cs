@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using NuGet.Configuration;
 using NuGet.PackageManagement.VisualStudio;
 using Task = System.Threading.Tasks.Task;
 
@@ -217,7 +218,7 @@ namespace API.Test
 
         private static ISettings getVSSettings()
         {
-            return ServiceLocator.GetInstance<NuGet.Configuration.ISettings>();
+            return ServiceLocator.GetInstance<ISettings>();
         }
     }
 }

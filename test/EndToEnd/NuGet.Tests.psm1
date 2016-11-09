@@ -215,6 +215,7 @@ function global:Run-Test {
     {
     }
 
+	filter timestamp {"$(Get-Date -Format G): $_"}
 	$startTime = Get-Date
     try {
         # Run all tests
@@ -306,7 +307,7 @@ function global:Run-Test {
                 }
 				
 				$IsSkippedBefore = [API.Test.VSHelper]::IsBindingRedirectSkipped()			
-				
+				filter timestamp {"$(Get-Date -Format G): $_"}
 				Write-Host "IsBindingRedirect before test : " $name " is " $IsSkippedBefore | timestamp
 				
                 $context = New-Object PSObject -Property $values
@@ -387,7 +388,7 @@ function global:Run-Test {
                 }
 				
 				$IsSkippedAfter = [API.Test.VSHelper]::IsBindingRedirectSkipped()			
-				
+				filter timestamp {"$(Get-Date -Format G): $_"}
 				Write-Host "IsBindingRedirect before test : " $name " is " $IsSkippedAfter | timestamp
 				
 				if($IsSkippedAfter -ne $IsSkippedBefore) {
