@@ -307,8 +307,8 @@ function global:Run-Test {
                 }
 				
 				$IsSkippedBefore = [API.Test.VSHelper]::IsBindingRedirectSkipped()			
-				filter timestamp {"$(Get-Date -Format G): $_"}
-				Write-Host "IsBindingRedirect before test : " $name " is " $IsSkippedBefore | timestamp
+				$startTime = Get-Date			
+				Write-Host $startTime.ToString() " : IsBindingRedirect before test : " $name " is " $IsSkippedBefore
 				
                 $context = New-Object PSObject -Property $values
 
@@ -388,11 +388,12 @@ function global:Run-Test {
                 }
 				
 				$IsSkippedAfter = [API.Test.VSHelper]::IsBindingRedirectSkipped()			
-				filter timestamp {"$(Get-Date -Format G): $_"}
-				Write-Host "IsBindingRedirect before test : " $name " is " $IsSkippedAfter | timestamp
+				$startTime = Get-Date			
+				Write-Host $startTime.ToString() " : IsBindingRedirect before test : " $name " is " $IsSkippedAfter | timestamp
 				
 				if($IsSkippedAfter -ne $IsSkippedBefore) {
-					Write-Host "IsBindingRedirect changed in test : " $name | timestamp
+					$startTime = Get-Date			
+					Write-Host "IsBindingRedirect changed in test : " $name
 				}
 				
                 Append-TextResult $results[$name] $testRealTimeResultsFile

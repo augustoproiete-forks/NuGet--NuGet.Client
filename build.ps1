@@ -82,6 +82,8 @@ if (-not $Configuration) {
     }
 }
 
+$Configuration = 'Debug'
+
 Write-Host ("`r`n" * 3)
 Trace-Log ('=' * 60)
 
